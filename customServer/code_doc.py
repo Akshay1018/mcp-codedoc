@@ -1,110 +1,78 @@
 import os
 import ast
-import textwrap
 from datetime import datetime
 from mcp.server.fastmcp import FastMCP
 
+#=====================================================
+# CodeDoc MCP Server
+#=====================================================
+
 mcp = FastMCP("CodeDoc")
 
-# === Create documentation directory ===
+# Directory setup
 BASE_DIR = os.path.dirname(__file__)
 DOCS_DIR = os.path.join(BASE_DIR, "documentation")
+NOTES_DIR = os.path.join(BASE_DIR, "documentation_notes")
+
+# Ensure directories exist
 os.makedirs(DOCS_DIR, exist_ok=True)
-
-# === Generate timestamped doc filename ===
-timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-DOC_FILE = os.path.join(DOCS_DIR, f"documentation_{timestamp}.md")
-
-
-
-def md_section(title: str, content: str) -> str:
-    """Format text into markdown section."""
-    wrapped = textwrap.fill(content, width=100)
-    return f"### {title}\n\n{wrapped}\n\n"
-
+os.makedirs(NOTES_DIR, exist_ok=True)
 
 @mcp.tool()
 def generate_documentation(code: str) -> str:
     """
-    Generate **professional Markdown documentation** for the given Python code.
+    Generate professional documentation and store notes automatically.
     """
 
+    # Parse code safely
     try:
         tree = ast.parse(code)
     except Exception as e:
         return f"❌ Error parsing code: {e}"
 
-    # === Header ===
-    docs = []
-    module_name = "Documentation"
-    docs.append(f"# {module_name}\n")
-    docs.append("---\n")
+    # Generate timestamped filenames
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    doc_filename = f"documentation_{timestamp}.md"
+    note_filename = f"notes_{timestamp}.txt"
 
-    module_doc = ast.get_docstring(tree)
-    overview = (
-        module_doc
-        or "This module provides core functionalities and reusable components for business logic."
-    )
-    docs.append(md_section("Overview", overview))
+    doc_path = os.path.join(DOCS_DIR, doc_filename)
+    note_path = os.path.join(NOTES_DIR, note_filename)
 
-    # === Function sections ===
+    docs = ["# 📘 Documentation\n"]
+    notes = ["# 🗒️ Documentation Notes\n"]
+
+    # Process each function in code
     for node in tree.body:
         if isinstance(node, ast.FunctionDef):
             func_name = node.name
-            params = [arg.arg for arg in node.args.args]
             docstring = ast.get_docstring(node) or "No description provided."
-
-            docs.append(f"## `{func_name}({', '.join(params)})`\n")
-            docs.append(md_section("Description", docstring))
-
-            # Parameters
-            if params:
-                docs.append("#### Parameters\n")
-                for p in params:
-                    docs.append(f"- **{p}** (`variable`): Parameter used in this function.\n")
-            else:
-                docs.append("#### Parameters\n- None\n")
-
-            # Returns
+            params = [arg.arg for arg in node.args.args]
             ret = getattr(node, 'returns', None)
-            ret_type = ast.unparse(ret) if ret else "varies"
-            docs.append("\n#### Returns\n")
-            docs.append(f"- `{ret_type}`: Output value of the function.\n")
+            returns = ast.unparse(ret) if ret else "None"
 
-            # Example usage
-            example = f"""```python
-# Example usage of {func_name}()
-result = {func_name}({', '.join('...' for _ in params)})
-print(result)
-```"""
-            docs.append(md_section("Example Usage", example))
+            # Add to main documentation
+            docs.extend([
+                f"## Function: `{func_name}`",
+                f"**Description:** {docstring}",
+                f"**Parameters:** {', '.join(params) or 'None'}",
+                f"**Returns:** {returns}",
+                "---\n"
+            ])
 
-            # Notes
-            note_text = (
-                f"The `{func_name}` function was auto-documented using static code analysis. "
-                "Please validate return types, exceptions, and examples based on your project’s actual behavior."
-            )
-            docs.append(md_section("Notes", note_text))
+            # Add important notes
+            notes.extend([
+                f"- Function: {func_name}",
+                f"- Summary: {docstring}",
+                f"- Parameters: {', '.join(params) or 'None'}",
+                f"- Returns: {returns}",
+                ""
+            ])
 
-            docs.append("---\n")
+    # Save both documentation and notes
+    with open(doc_path, "w") as f:
+        f.write("\n".join(docs))
 
-    # === Error Handling Section ===
-    docs.append("## Error Handling\n")
-    docs.append(
-        "All functions should perform **input validation** and raise meaningful errors (e.g., "
-        "`ValueError`, `TypeError`) where applicable.\n"
-    )
-    docs.append(
-        "Example:\n\n```python\n"
-        "try:\n"
-        "    result = your_function(...)\n"
-        "except ValueError as e:\n"
-        "    print(e)\n```\n"
-    )
+    with open(note_path, "w") as f:
+        f.write("\n".join(notes))
 
-    # === Save the documentation ===
-    full_doc = "\n".join(docs)
-    with open(DOC_FILE, "w") as f:
-        f.write(full_doc)
-
-    return f"✅ Markdown documentation successfully generated.\n📄 Saved at: {DOC_FILE}"
+    return f"✅ Documentation saved to `{doc_path}` and notes saved to `{note_path}`"
