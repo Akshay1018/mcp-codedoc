@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 #===============================================
-# Notes MCP Server (Enhanced)
+# Notes MCP Server
 #===============================================
 
 mcp = FastMCP("Notes")
