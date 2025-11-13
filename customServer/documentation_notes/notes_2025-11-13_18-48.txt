@@ -1,0 +1,14 @@
+- Function: hello_world
+- Description: Returns a simple "Hello, World!" message.
+- Params: None
+- Returns: varies
+
+- Function: greet_user
+- Description: Returns a personalized greeting based on the provided name.
+- Params: name
+- Returns: varies
+
+- Function: process_data
+- Description: Accepts JSON data via a POST request and returns a confirmation.
+- Params: None
+- Returns: varies
