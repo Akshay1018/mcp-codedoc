@@ -5,7 +5,7 @@ from datetime import datetime
 mcp = FastMCP("CodeDoc")
 
 @mcp.tool()
-def generate_doc_file(code: str, doc_content: str, language: str = "python") -> str:
+def generate_doc_file(code: str, doc_content: str, language: str = "auto") -> str:
     """
     Creates technical documentation. 
     The doc_content should follow this structure: 
