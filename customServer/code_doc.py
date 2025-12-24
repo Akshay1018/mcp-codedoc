@@ -8,7 +8,7 @@ mcp = FastMCP("CodeDoc")
 IGNORE_DIRS = {'node_modules', '.git', '__pycache__', 'venv', '.env', 'dist', 'build'}
 
 @mcp.tool()
-def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_snippet: str = None, file_path: str = None, language: str = "auto") -> str:
+def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_snippet: str, file_path: str, language: str = "auto") -> str:
     """
     The universal tool for documentation and audits.
     - If file_path is provided: Reads from local disk.
@@ -17,8 +17,10 @@ def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_sni
     """
     try:
         # 1. Setup target directory
-        base_dir = os.getcwd()
+        base_dir = os.path.dirname(os.path.abspath(__file__))
         target_folder = os.path.join(base_dir, "documentation")
+        
+        # Create folder if it doesn't exist
         os.makedirs(target_folder, exist_ok=True)
 
         # 2. Determine Source Code & Filename
@@ -54,7 +56,7 @@ def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_sni
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(content)
 
-        return f"✅ Successfully generated: documentation/{filename}"
+        return f"Successfully generated: documentation/{filename}"
 
     except Exception as e:
         return f"System Error: {str(e)}"
