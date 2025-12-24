@@ -8,7 +8,7 @@ mcp = FastMCP("CodeDoc")
 IGNORE_DIRS = {'node_modules', '.git', '__pycache__', 'venv', '.env', 'dist', 'build'}
 
 @mcp.tool()
-def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_snippet: str, file_path: str, language: str = "auto") -> str:
+def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_snippet: str = None, file_path: str = None, language: str = "auto") -> str:
     """
     The universal tool for documentation and audits.
     - If file_path is provided: Reads from local disk.
@@ -37,7 +37,7 @@ def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_sni
         elif code_snippet:
             # Snippet Mode
             final_code = code_snippet
-            display_name = "chat_snippet"
+            display_name = "documentation"
         else:
             return "Error: Neither a file path nor a code snippet was provided."
 
