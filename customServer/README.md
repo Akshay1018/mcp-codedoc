@@ -61,6 +61,7 @@ Edit your `claude_desktop_config.json` (usually located at `~/Library/Applicatio
     }
   }
 }
+```
 
 ## 📖 How to Use
 Simply prompt your AI naturally. CodeDoc will handle the file operations and folder organization.
