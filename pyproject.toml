@@ -1,0 +1,18 @@
+[project]
+name = "mcp-codedoc"
+version = "0.1.0"
+description = "Professional AI-driven code documentation and quality audit agent."
+readme = "README.md"
+authors = [{ name = "Your Name", email = "your@email.com" }]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.21.0",
+    "mcp[server]",
+    "fastmcp",
+]
+[project.scripts]
+codedoc = "codedoc.server:mcp.run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build_meta"
