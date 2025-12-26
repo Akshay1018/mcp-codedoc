@@ -76,3 +76,6 @@ def scan_project_files() -> list:
                 rel_path = os.path.relpath(os.path.join(root, file), base_path)
                 documentable.append(rel_path)
     return documentable
+
+if __name__ == "__main__":
+    mcp.run(transport='stdio')
