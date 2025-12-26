@@ -43,7 +43,7 @@ def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_sni
 
         # 3. Create the output file
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"audit_{display_name.replace('.', '_')}_{timestamp}.md"
+        filename = f"{display_name.replace('.', '_')}_{timestamp}.md"
         full_path = os.path.join(target_folder, filename)
 
         # 4. Build Markdown
