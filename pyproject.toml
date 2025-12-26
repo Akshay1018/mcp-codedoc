@@ -1,12 +1,12 @@
 [project]
 name = "mcp-codedoc"
-version = "0.1.0"
+version = "0.1.3"
 description = "Professional AI-driven code documentation and quality audit agent."
 readme = "README.md"
 authors = [{ name = "Akshay", email = "ak715173@gmail.com" }]
 requires-python = ">=3.10"
 dependencies = [
-    "mcp[server]",
+    "mcp",
     "fastmcp",
 ]
 
