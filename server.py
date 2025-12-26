@@ -4,7 +4,6 @@ from datetime import datetime
 
 mcp = FastMCP("CodeDoc")
 
-# Folders to skip for "Whole Project" scans
 IGNORE_DIRS = {'node_modules', '.git', '__pycache__', 'venv', '.env', 'dist', 'build'}
 
 @mcp.tool()
@@ -23,19 +22,18 @@ def generate_smart_doc(code: str, doc_content: str, audit_results: str, code_sni
         # Create folder if it doesn't exist
         os.makedirs(target_folder, exist_ok=True)
 
-        # 2. Determine Source Code & Filename
         display_name = ""
         final_code = ""
 
         if file_path:
-            # File Mode
+            
             if not os.path.exists(file_path):
                 return f"Error: File '{file_path}' not found."
             with open(file_path, "r", encoding="utf-8") as f:
                 final_code = f.read()
             display_name = os.path.basename(file_path)
         elif code_snippet:
-            # Snippet Mode
+            
             final_code = code_snippet
             display_name = "documentation"
         else:
