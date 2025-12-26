@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import datetime
 
-mcp = FastMCP("CodeDoc")
+mcp = FastMCP("CodeDoc", log_level="ERROR")
 
 IGNORE_DIRS = {'node_modules', '.git', '__pycache__', 'venv', '.env', 'dist', 'build'}
 
@@ -77,5 +77,8 @@ def scan_project_files() -> list:
                 documentable.append(rel_path)
     return documentable
 
-if __name__ == "__main__":
+def main():
     mcp.run(transport='stdio')
+
+if __name__ == "__main__":
+    main()
