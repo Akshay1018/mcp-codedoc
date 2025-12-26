@@ -1,0 +1,12 @@
+# Environments
+.env
+venv/
+.venv/
+__pycache__/
+
+# CodeDoc Outputs
+documentation/
+
+# Sensitive data
+*.log
+.DS_Store
