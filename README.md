@@ -15,6 +15,27 @@
 -   **Context-Aware:** Reads local files directly from your workspace—no more copy-pasting.
     
 -   **Smart Filtering:** Automatically ignores `node_modules`, `.env`, and binary files.
+
+## ⚖️ How CodeDoc is Different
+
+While standard AI chat can explain code, **CodeDoc** is built for a professional "Review-First" workflow. It bridges the gap between temporary chat conversations and permanent repository health.
+
+| Feature | Standard AI Chat | CodeDoc MCP |
+| :--- | :--- | :--- |
+| **Persistence** | Lost when chat is cleared | Permanent in `/documentation` folder |
+| **Context** | Limited to open tabs | Scans entire project structure |
+| **Workflow** | Reactive (answering questions) | Proactive (pre-commit style auditing) |
+| **Output** | Raw text in chat window | Professional, version-controlled Markdown |
+| **System Awareness**| No local file access | Reads & Writes directly to your workspace |
+
+### 🛠️ The "Pre-Commit" Philosophy
+CodeDoc isn't just a documentation generator; it's a **quality gatekeeper**. By generating a local audit before you merge code, you ensure that security risks, concurrency bugs, and architectural flaws are caught and documented for the whole team to see—not just hidden in your AI history.
+
+### 🗺️ Future Roadmap
+- 🚀 **Smart Refactoring:** Automated suggestions to simplify complex logic.
+- ⚡ **Performance Optimization:** Identifying and fixing $O(n^2)$ bottlenecks.
+- 🔒 **Secret Detection:** Scanning for leaked API keys or hardcoded credentials.
+- 📈 **Commit Integration:** Automatically updating docs on every local commit.
     
 
 * * *
