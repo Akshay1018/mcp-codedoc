@@ -20,6 +20,14 @@
 
 While standard AI chat can explain code, **CodeDoc** is built for a professional "Review-First" workflow. It bridges the gap between temporary chat conversations and permanent repository health.
 
+### 🛡️ The "Certified Push" Workflow
+CodeDoc is the only tool that bridges the gap between **Code Execution** and **Compliance**. 
+
+**The Challenge:** Cursor suggests code, but does it follow your team's specific naming conventions? Does it avoid nested loops?
+**The Solution:** With CodeDoc Phase 2, you provide your `Development Manifesto`. CodeDoc then audits your staged files against those specific rules, refactors the logic, and documents the changes in one step.
+
+**It doesn't just write code; it enforces your standards.**
+
 | Feature | Standard AI Chat | CodeDoc MCP |
 | :--- | :--- | :--- |
 | **Persistence** | Lost when chat is cleared | Permanent in `/documentation` folder |
