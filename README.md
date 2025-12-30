@@ -33,7 +33,7 @@ CodeDoc isn't just a documentation generator; it's a **quality gatekeeper**. By 
 
 ### 🗺️ Future Roadmap
 - 🚀 **Smart Refactoring:** Automated suggestions to simplify complex logic.
-- ⚡ **Performance Optimization:** Identifying and fixing $O(n^2)$ bottlenecks[in progress].
+- ⚡ **Performance Optimization:** Identifying and fixing $O(n^2)$ bottlenecks. User can ask for the code optimisation and bugfree code before final push to production.[in progress].
 - 🔒 **Secret Detection:** Scanning for leaked API keys or hardcoded credentials.
 - 📈 **Commit Integration:** Automatically updating docs on every local commit.
     
