@@ -77,6 +77,81 @@ def scan_project_files() -> list:
                 documentable.append(rel_path)
     return documentable
 
+# New Phase 2 Tool: Refactoring & Optimization
+@mcp.tool()
+async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
+    """
+    Refactors and optimizes code. 
+    Searches ONLY within the current project directory for security.
+    """
+    import os
+
+    # 1. SECURITY: Lock to the Current Working Directory (CWD)
+    # This prevents the tool from scanning your entire system.
+    project_root = os.getcwd()
+    resolved_path = None
+
+    # 2. SMART SEARCH: Find the file within the project root
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        resolved_path = file_path
+    else:
+        matches = []
+        target_name = os.path.basename(file_path)
+        
+        for root, dirs, files in os.walk(project_root):
+            # Security: Skip hidden folders (like .git) and don't go up
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            
+            if target_name in files:
+                full_path = os.path.join(root, target_name)
+                matches.append(full_path)
+        
+        if not matches:
+            return f"Error: File '{target_name}' not found within project: {project_root}"
+        
+        if len(matches) > 1:
+            rel_paths = [os.path.relpath(m, project_root) for m in matches]
+            return f"⚠️ Multiple files found. Please specify which one:\n" + "\n".join([f"- {p}" for p in rel_paths])
+        
+        resolved_path = matches[0]
+
+    # 3. REFACTORING LOGIC
+    try:
+        with open(resolved_path, "r") as f:
+            code_content = f.read()
+
+        ext = os.path.splitext(resolved_path)[1]
+        default_rules = """
+        1. Performance: Optimize loops and reduce redundant computations.
+        2. Clean Code: meaningful names, functions should do one thing.
+        3. Readability: Simplify complex nested logic.
+        """
+
+        refactor_payload = f"""
+        FILE: {os.path.relpath(resolved_path, project_root)} (Language: {ext})
+        
+        ACTION: Refactor and optimize the code below.
+        
+        USER SPECIFIED RULES:
+        {custom_rules if custom_rules else "No specific rules provided. Use default optimizations."}
+        
+        DEFAULT QUALITY GUARDRAILS:
+        {default_rules}
+        
+        CODE TO PROCESS:
+        ---
+        {code_content}
+        ---
+        
+        OUTPUT REQUIREMENT:
+        Provide ONLY the refactored code block. Ensure it is bug-free and follows principles like SOLID and OOPS.
+        """
+        
+        return refactor_payload
+
+    except Exception as e:
+        return f"Refactoring Error: {str(e)}"
+
 def main():
     mcp.run(transport='stdio')
 
