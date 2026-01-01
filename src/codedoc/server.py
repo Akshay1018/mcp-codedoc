@@ -77,6 +77,80 @@ def scan_project_files() -> list:
                 documentable.append(rel_path)
     return documentable
 
+# New Phase 2 Tool: Refactoring & Optimization
+@mcp.tool()
+async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
+    """
+    Refactors and optimizes code. Automatically finds files in subdirectories.
+    Supports SOLID, OOPS, and custom development rules.
+    """
+    import os
+
+    # --- START SMART PATH RESOLUTION ---
+    resolved_path = None
+    
+    # Check if the path is already correct/absolute
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        resolved_path = file_path
+    else:
+        # Recursive search for the filename
+        matches = []
+        filename_to_find = os.path.basename(file_path)
+        
+        for root, _, files in os.walk("."):
+            # Exclude hidden/system dirs like .git or .venv
+            if any(part.startswith('.') for part in root.split(os.sep)):
+                continue
+                
+            if filename_to_find in files:
+                matches.append(os.path.join(root, filename_to_find))
+        
+        if not matches:
+            return f"Error: File '{file_path}' not found in the project."
+            
+        if len(matches) > 1:
+            file_list = "\n".join([f"- {m}" for m in matches])
+            return f"⚠️ Warning: Multiple files found for '{filename_to_find}':\n{file_list}\n\nPlease provide the full path to continue."
+        
+        resolved_path = matches[0]
+    # --- END SMART PATH RESOLUTION ---
+
+    try:
+        with open(resolved_path, "r") as f:
+            code_content = f.read()
+
+        ext = os.path.splitext(resolved_path)[1]
+        default_rules = """
+        1. Performance: Optimize loops and reduce redundant computations.
+        2. Clean Code: Meaningful names, Single Responsibility Principle.
+        3. Readability: Simplify complex nested logic and remove duplicate code.
+        """
+
+        refactor_payload = f"""
+        FILE: {resolved_path} (Language: {ext})
+        
+        ACTION: Refactor and optimize the code below.
+        
+        USER SPECIFIED RULES:
+        {custom_rules if custom_rules else "No specific rules provided. Use default optimizations."}
+        
+        DEFAULT QUALITY GUARDRAILS:
+        {default_rules}
+        
+        CODE TO PROCESS:
+        ---
+        {code_content}
+        ---
+        
+        OUTPUT REQUIREMENT:
+        Provide ONLY the refactored code block. Ensure it is bug-free and follows requested principles (SOLID, OOPS, etc.).
+        """
+        
+        return refactor_payload
+
+    except Exception as e:
+        return f"Refactoring Error: {str(e)}"
+
 def main():
     mcp.run(transport='stdio')
 
