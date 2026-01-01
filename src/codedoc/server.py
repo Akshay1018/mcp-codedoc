@@ -81,40 +81,41 @@ def scan_project_files() -> list:
 @mcp.tool()
 async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
     """
-    Refactors and optimizes code. Automatically finds files in subdirectories.
-    Supports SOLID, OOPS, and custom development rules.
+    Refactors and optimizes code. 
+    Searches ONLY within the current project directory for security.
     """
     import os
 
-    # --- START SMART PATH RESOLUTION ---
+    # 1. SECURITY: Lock to the Current Working Directory (CWD)
+    # This prevents the tool from scanning your entire system.
+    project_root = os.getcwd()
     resolved_path = None
-    
-    # Check if the path is already correct/absolute
+
+    # 2. SMART SEARCH: Find the file within the project root
     if os.path.exists(file_path) and os.path.isfile(file_path):
         resolved_path = file_path
     else:
-        # Recursive search for the filename
         matches = []
-        filename_to_find = os.path.basename(file_path)
+        target_name = os.path.basename(file_path)
         
-        for root, _, files in os.walk("."):
-            # Exclude hidden/system dirs like .git or .venv
-            if any(part.startswith('.') for part in root.split(os.sep)):
-                continue
-                
-            if filename_to_find in files:
-                matches.append(os.path.join(root, filename_to_find))
+        for root, dirs, files in os.walk(project_root):
+            # Security: Skip hidden folders (like .git) and don't go up
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            
+            if target_name in files:
+                full_path = os.path.join(root, target_name)
+                matches.append(full_path)
         
         if not matches:
-            return f"Error: File '{file_path}' not found in the project."
-            
+            return f"Error: File '{target_name}' not found within project: {project_root}"
+        
         if len(matches) > 1:
-            file_list = "\n".join([f"- {m}" for m in matches])
-            return f"⚠️ Warning: Multiple files found for '{filename_to_find}':\n{file_list}\n\nPlease provide the full path to continue."
+            rel_paths = [os.path.relpath(m, project_root) for m in matches]
+            return f"⚠️ Multiple files found. Please specify which one:\n" + "\n".join([f"- {p}" for p in rel_paths])
         
         resolved_path = matches[0]
-    # --- END SMART PATH RESOLUTION ---
 
+    # 3. REFACTORING LOGIC
     try:
         with open(resolved_path, "r") as f:
             code_content = f.read()
@@ -122,12 +123,12 @@ async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
         ext = os.path.splitext(resolved_path)[1]
         default_rules = """
         1. Performance: Optimize loops and reduce redundant computations.
-        2. Clean Code: Meaningful names, Single Responsibility Principle.
-        3. Readability: Simplify complex nested logic and remove duplicate code.
+        2. Clean Code: meaningful names, functions should do one thing.
+        3. Readability: Simplify complex nested logic.
         """
 
         refactor_payload = f"""
-        FILE: {resolved_path} (Language: {ext})
+        FILE: {os.path.relpath(resolved_path, project_root)} (Language: {ext})
         
         ACTION: Refactor and optimize the code below.
         
@@ -143,7 +144,7 @@ async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
         ---
         
         OUTPUT REQUIREMENT:
-        Provide ONLY the refactored code block. Ensure it is bug-free and follows requested principles (SOLID, OOPS, etc.).
+        Provide ONLY the refactored code block. Ensure it is bug-free and follows principles like SOLID and OOPS.
         """
         
         return refactor_payload
