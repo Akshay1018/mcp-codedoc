@@ -77,71 +77,60 @@ def scan_project_files() -> list:
                 documentable.append(rel_path)
     return documentable
 
+# Refactoring & Optimization
 @mcp.tool()
 async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
     """
-    Refactors and optimizes a file within the current project.
-    Only accesses the directory where the server was started to avoid OS popups.
+    Refactors and optimizes code. 
+    Handles case-insensitivity and deep path discovery.
     """
     import os
 
-    # 1. STRICT SECURITY BOUNDARY
-    # We use the absolute path of the current directory to lock the search.
-    project_root = os.path.abspath(os.getcwd())
+    # 1. FORCE THE CORRECT PROJECT ROOT
+    # We look at the current working directory but prioritize the actual file name
+    project_root = os.path.abspath(".")
+    target_filename = os.path.basename(file_path).lower() # Case-insensitive
     resolved_path = None
+    matches = []
 
-    # 2. FILE SEARCH (Restricted to project_root)
-    target_name = os.path.basename(file_path)
+    # 2. AGGRESSIVE SEARCH
+    for root, dirs, files in os.walk(project_root):
+        # Security: Prune restricted folders
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['venv', 'node_modules', 'Library']]
+        
+        for f in files:
+            if f.lower() == target_filename:
+                matches.append(os.path.join(root, f))
+
+    # 3. SMART PATH SELECTION
+    if not matches:
+        return f"Error: '{file_path}' not found in {project_root}. Please ensure you have the file open in Cursor."
+        
+    if len(matches) > 1:
+        rel_paths = [os.path.relpath(m, project_root) for m in matches]
+        return f"Multiple matches found. Which one should I refactor?\n" + "\n".join([f"- {p}" for p in rel_paths])
     
-    # Check if the file is directly in the root first
-    direct_path = os.path.join(project_root, target_name)
-    if os.path.exists(direct_path) and os.path.isfile(direct_path):
-        resolved_path = direct_path
-    else:
-        # Search subdirectories only
-        matches = []
-        for root, dirs, files in os.walk(project_root):
-            # SECURITY: Instantly prune hidden folders and system-heavy folders
-            # This prevents triggering OS security warnings for system files.
-            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['Library', 'Documents', 'Downloads']]
-            
-            if target_name in files:
-                matches.append(os.path.join(root, target_name))
-        
-        if not matches:
-            return f"Error: '{target_name}' not found in the project directory: {project_root}"
-        
-        if len(matches) > 1:
-            rel_paths = [os.path.relpath(m, project_root) for m in matches]
-            return f"⚠️ Multiple files found. Please specify the path:\n" + "\n".join([f"- {p}" for p in rel_paths])
-        
-        resolved_path = matches[0]
+    resolved_path = matches[0]
 
-    # 3. REFACTORING PAYLOAD
+    # 4. EXECUTE REFACTOR
     try:
-        with open(resolved_path, "r") as f:
+        with open(resolved_path, "r", encoding="utf-8") as f:
             code_content = f.read()
 
-        ext = os.path.splitext(resolved_path)[1]
-        
-        # We wrap the response in a clear instruction for the AI (Claude)
+        # Build a robust AI Prompt
         return f"""
-        ACT AS: Senior Software Architect
-        TASK: Refactor the provided code file.
-        FILE_NAME: {os.path.relpath(resolved_path, project_root)}
+        TASK: Refactor the code for {os.path.basename(resolved_path)}
+        PROJECT_PATH: {os.path.relpath(resolved_path, project_root)}
         
-        RULES TO FOLLOW:
-        {custom_rules if custom_rules else "Apply SOLID principles, OOPS patterns, and Clean Code standards."}
+        RULES: {custom_rules if custom_rules else "Apply SOLID, OOPS, and Clean Code standards."}
         
-        CODE_CONTENT:
+        ORIGINAL_CODE:
         ---
         {code_content}
         ---
         
-        INSTRUCTION: 
-        Provide only the refactored code. Do not generate documentation unless explicitly asked in a separate prompt.
+        INSTRUCTION: Provide the refactored code block only. Cursor will help the user apply changes.
         """
-
     except Exception as e:
         return f"Access Error: {str(e)}"
 
