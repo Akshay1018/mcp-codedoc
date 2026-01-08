@@ -77,80 +77,62 @@ def scan_project_files() -> list:
                 documentable.append(rel_path)
     return documentable
 
-# New Phase 2 Tool: Refactoring & Optimization
+# Refactoring & Optimization
 @mcp.tool()
 async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
     """
     Refactors and optimizes code. 
-    Searches ONLY within the current project directory for security.
+    Handles case-insensitivity and deep path discovery.
     """
     import os
 
-    # 1. SECURITY: Lock to the Current Working Directory (CWD)
-    # This prevents the tool from scanning your entire system.
-    project_root = os.getcwd()
+    # 1. FORCE THE CORRECT PROJECT ROOT
+    # We look at the current working directory but prioritize the actual file name
+    project_root = os.path.abspath(".")
+    target_filename = os.path.basename(file_path).lower() # Case-insensitive
     resolved_path = None
+    matches = []
 
-    # 2. SMART SEARCH: Find the file within the project root
-    if os.path.exists(file_path) and os.path.isfile(file_path):
-        resolved_path = file_path
-    else:
-        matches = []
-        target_name = os.path.basename(file_path)
+    # 2. AGGRESSIVE SEARCH
+    for root, dirs, files in os.walk(project_root):
+        # Security: Prune restricted folders
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['venv', 'node_modules', 'Library']]
         
-        for root, dirs, files in os.walk(project_root):
-            # Security: Skip hidden folders (like .git) and don't go up
-            dirs[:] = [d for d in dirs if not d.startswith('.')]
-            
-            if target_name in files:
-                full_path = os.path.join(root, target_name)
-                matches.append(full_path)
-        
-        if not matches:
-            return f"Error: File '{target_name}' not found within project: {project_root}"
-        
-        if len(matches) > 1:
-            rel_paths = [os.path.relpath(m, project_root) for m in matches]
-            return f"⚠️ Multiple files found. Please specify which one:\n" + "\n".join([f"- {p}" for p in rel_paths])
-        
-        resolved_path = matches[0]
+        for f in files:
+            if f.lower() == target_filename:
+                matches.append(os.path.join(root, f))
 
-    # 3. REFACTORING LOGIC
+    # 3. SMART PATH SELECTION
+    if not matches:
+        return f"Error: '{file_path}' not found in {project_root}. Please ensure you have the file open in Cursor."
+        
+    if len(matches) > 1:
+        rel_paths = [os.path.relpath(m, project_root) for m in matches]
+        return f"Multiple matches found. Which one should I refactor?\n" + "\n".join([f"- {p}" for p in rel_paths])
+    
+    resolved_path = matches[0]
+
+    # 4. EXECUTE REFACTOR
     try:
-        with open(resolved_path, "r") as f:
+        with open(resolved_path, "r", encoding="utf-8") as f:
             code_content = f.read()
 
-        ext = os.path.splitext(resolved_path)[1]
-        default_rules = """
-        1. Performance: Optimize loops and reduce redundant computations.
-        2. Clean Code: meaningful names, functions should do one thing.
-        3. Readability: Simplify complex nested logic.
-        """
-
-        refactor_payload = f"""
-        FILE: {os.path.relpath(resolved_path, project_root)} (Language: {ext})
+        # Build a robust AI Prompt
+        return f"""
+        TASK: Refactor the code for {os.path.basename(resolved_path)}
+        PROJECT_PATH: {os.path.relpath(resolved_path, project_root)}
         
-        ACTION: Refactor and optimize the code below.
+        RULES: {custom_rules if custom_rules else "Apply SOLID, OOPS, and Clean Code standards."}
         
-        USER SPECIFIED RULES:
-        {custom_rules if custom_rules else "No specific rules provided. Use default optimizations."}
-        
-        DEFAULT QUALITY GUARDRAILS:
-        {default_rules}
-        
-        CODE TO PROCESS:
+        ORIGINAL_CODE:
         ---
         {code_content}
         ---
         
-        OUTPUT REQUIREMENT:
-        Provide ONLY the refactored code block. Ensure it is bug-free and follows principles like SOLID and OOPS.
+        INSTRUCTION: Provide the refactored code block only. Cursor will help the user apply changes.
         """
-        
-        return refactor_payload
-
     except Exception as e:
-        return f"Refactoring Error: {str(e)}"
+        return f"Access Error: {str(e)}"
 
 def main():
     mcp.run(transport='stdio')
