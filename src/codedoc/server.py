@@ -51,7 +51,7 @@ def generate_smart_doc(doc_content: str, audit_results: str, code_snippet: str =
         content += f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
         content += f"## 1. Documentation\n{doc_content}\n\n"
         content += f"## 2. Quality Audit\n{audit_results}\n\n"
-        content += f"## 3. Source Code\n```{language}\n{final_code}\n```"
+        # content += f"## 3. Source Code\n```{language}\n{final_code}\n```"
 
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(content)
