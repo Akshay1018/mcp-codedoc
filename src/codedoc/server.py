@@ -134,6 +134,65 @@ async def refactor_and_optimize(file_path: str, custom_rules: str = "") -> str:
     except Exception as e:
         return f"Access Error: {str(e)}"
 
+# Health Audit and Refactoring
+@mcp.tool()
+async def evaluate_and_refactor(file_path: str, custom_rules: str = "") -> str:
+    """
+    Language-agnostic --- health audit AND generates optimized code.
+    """
+    import os
+
+    # 1. SEARCH
+    project_root = os.path.abspath(os.getcwd())
+    target_name = os.path.basename(file_path)
+    resolved_path = None
+
+    for root, dirs, files in os.walk(project_root):
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'venv', 'bin', 'obj']]
+        if target_name in files:
+            resolved_path = os.path.join(root, target_name)
+            break
+
+    if not resolved_path:
+        return f"Error: Could not find '{target_name}' in the project."
+
+    # 2. FILE METADATA
+    ext = os.path.splitext(resolved_path)[1].lower()
+    
+    try:
+        with open(resolved_path, "r", encoding="utf-8") as f:
+            code_content = f.read()
+
+        # 3. UNIFIED ARCHITECT PROMPT
+        return f"""
+        ROLE: Senior Multi-Language Architect
+        TASK: Audit and Refactor the provided {ext} file.
+        
+        FILE_PATH: {os.path.relpath(resolved_path, project_root)}
+
+        --- STEP 1: HEALTH AUDIT ---
+        Analyze the code for SOLID compliance, OOPS patterns, and language-specific best practices.
+        Generate a Score (1-10) and a Health Report.
+
+        --- STEP 2: OPTIMIZATION ---
+        Refactor the code to address every weakness identified in Step 1.
+        USER RULES: {custom_rules if custom_rules else "Apply standard high-quality optimizations."}
+
+        CODE TO PROCESS:
+        ---
+        {code_content}
+        ---
+
+        OUTPUT FORMAT REQUIREMENT:
+        1. Start with the "## 🩺 Code Health Report" section (Score, Findings, Risk).
+        2. Then provide the "## 🛠️ Optimized Code" section.
+        3. Provide the refactored code in a standard markdown block. 
+           (Note: Cursor will automatically detect this and show the 'Apply' button).
+        4. End with a "## 🏁 Final Verdict" explaining why this version is production-ready.
+        """
+    except Exception as e:
+        return f"Processing Error: {str(e)}"
+
 def main():
     mcp.run(transport='stdio')
 
