@@ -113,8 +113,7 @@ Plaintext
     your-project/
     ├── documentation/
     │   ├── documentation_snippet_20251227_010000.md  <-- Your Report
-    ├── auth.py
-    └── server.py
+    ├── # other files
 
 ### What's inside the report?
 
