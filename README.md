@@ -1,8 +1,6 @@
 # 🛡️ CodeDoc MCP Server
 
-**The AI-Powered "Pre-Flight" Documentation & Quality Audit Agent.**
-
-`CodeDoc` is a professional-grade Model Context Protocol (MCP) server that transforms how developers document and review code. Instead of just describing what code does, `CodeDoc` acts as a **local gatekeeper**, identifying logic bugs, security vulnerabilities, and code smells before they ever reach a Pull Request.
+**CodeDoc** is an AI-powered "Project Guardian" built for Cursor and Claude. Unlike general AI coding assistants, CodeDoc is a context-aware engine designed to enforce structural integrity, SOLID principles, and clean code standards directly within your local environment.
 
 * * *
 
@@ -39,6 +37,21 @@ CodeDoc is the only tool that bridges the gap between **Code Execution** and **C
 ### 🛠️ The "Pre-Commit" Philosophy
 CodeDoc isn't just a documentation generator; it's a **quality gatekeeper**. By generating a local audit before you merge code, you ensure that security risks, concurrency bugs, and architectural flaws are caught and documented for the whole team to see—not just hidden in your AI history.
 
+## 🚀 Features
+
+### Phase 1: Smart Documentation (Complete)
+- **Automatic Docs:** Generates technical documentation for any file.
+- **Structure Scanning:** Maps out project files and dependencies.
+
+### Phase 2: Guardian Refactoring (Complete)
+- **Refactor & Optimize:** Targeted refactoring using SOLID and OOPS principles.
+- **Smart Pathing:** Finds `Middleware.java` even if it's buried in `src/main/resources/internal/`.
+- **Custom Rule Injection:** Allows users to pass specific team standards (e.g., "Use Tailwind for styles").
+
+### Phase 3: Architecture Scorecard (Coming Soon)
+- **Health Reports:** Get a 1-10 score on code complexity and technical debt.
+- **Impact Analysis:** See what components will break before you apply a change.
+
 ### 🗺️ Future Roadmap
 - 🚀 **Smart Refactoring:** Automated suggestions to simplify complex logic.
 - ⚡ **Performance Optimization:** Identifying and fixing $O(n^2)$ bottlenecks. User can ask for the code optimisation and bugfree code before final push to production.[in progress].
@@ -48,53 +61,29 @@ CodeDoc isn't just a documentation generator; it's a **quality gatekeeper**. By 
 
 * * *
 
-## 💻 Installation Guide
+## 🛠️ Installation
 
-### 1\. Prerequisites
+To add the Guardian Engine to your Cursor IDE:
 
-Ensure you have [Python 3.10+](https://python.org/) and the `uv` package manager installed:
+1. Open **Cursor Settings** (`Cmd+Shift+J` or `Ctrl+Shift+J`).
+2. Go to **Features > MCP**.
+3. Click **+ Add New MCP Server**.
+4. Paste the following:
 
-Bash
-
-    pip install uv
-
-### 2\. Adding to your AI Editor
-
-#### **For Cursor Users:**
-
-1.  Open **Settings** > **Cursor Settings**.
-    
-2.  Navigate to **Features** > **MCP Servers**.
-    
-3.  Click **\+ Add New MCP Server**.
-    
-4.  Fill in the details:
-    
-    -   **Name:** `CodeDoc`
-        
-    -   **Type:** `command`
-        
-    -   **Command:** \`\`\`bash uvx --from git+https://www.google.com/search?q=https://github.com/akshay1018/mcp-codedoc.git codedoc
-        
-
-#### **For Claude Desktop Users:**
-
-Add this to your `claude_desktop_config.json`:
-
-JSON
-
-    {
-      "mcpServers": {
-        "codedoc": {
-          "command": "uvx",
-          "args": [
-            "--from",
-            "git+https://github.com/akshay1018/mcp-codedoc.git",
-            "codedoc"
-          ]
-        }
-      }
+```json
+{
+  "mcpServers": {
+    "codedoc": {
+      "command": "uvx",
+      "args": [
+        "--refresh",
+        "--from",
+        "git+[https://github.com/akshay1018/mcp-codedoc.git](https://github.com/akshay1018/mcp-codedoc.git)",
+        "codedoc"
+      ]
     }
+  }
+}
 
 * * *
 
@@ -102,23 +91,14 @@ JSON
 
 Once installed, you don't need to learn any special commands. Just talk to the AI in your sidebar.
 
-### Scenario A: Documenting a Local File
+### The "Auto-Refactor" Prompt
+> "@codedoc scan and refactor Login.tsx using SOLID principles. Extract logic into a service file."
 
-If you have a file open (e.g., `auth.py`), simply ask:
+### The "Project Map" Prompt
+> "@codedoc scan project files and identify any files missing documentation."
 
-> _"Use CodeDoc to document `auth.py` and check for bugs."_
-
-### Scenario B: Documenting Pasted Code
-
-If you have a snippet of code in your chat, ask:
-
-> _"Document this code snippet and perform a quality audit."_
-
-### Scenario C: Project Overview
-
-If you want to see what files can be documented:
-
-> _"Scan my project files using CodeDoc and tell me which ones need documentation."_
+### The "Clean Push" Prompt
+> "@codedoc refactor Middleware.java for better performance before I push to main."
 
 * * *
 
