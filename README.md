@@ -85,6 +85,8 @@ To add the Guardian Engine to your Cursor IDE:
   }
 }
 
+```
+
 * * *
 
 ## 📖 How to Use (The Guide)
