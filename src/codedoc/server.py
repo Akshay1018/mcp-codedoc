@@ -1,7 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 import os
 import sys
-import re
 from datetime import datetime
 
 mcp = FastMCP("CodeDoc", log_level="ERROR")
@@ -201,6 +200,8 @@ async def predict_impact(file_path: str) -> str:
     Scans the entire project to find files that depend on the given file.
     Identifies 'Impacted Files' and potential breaking changes.
     """
+    import os
+    import re
 
     project_root = os.path.abspath(os.getcwd())
     target_name = os.path.basename(file_path)
