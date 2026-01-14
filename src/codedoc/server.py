@@ -1,6 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 import os
 import sys
+import re
 from datetime import datetime
 
 mcp = FastMCP("CodeDoc", log_level="ERROR")
@@ -192,6 +193,55 @@ async def evaluate_and_refactor(file_path: str, custom_rules: str = "") -> str:
         """
     except Exception as e:
         return f"Processing Error: {str(e)}"
+
+# impact analysis
+@mcp.tool()
+async def predict_impact(file_path: str) -> str:
+    """
+    Scans the entire project to find files that depend on the given file.
+    Identifies 'Impacted Files' and potential breaking changes.
+    """
+
+    project_root = os.path.abspath(os.getcwd())
+    target_name = os.path.basename(file_path)
+    # Remove extension to find imports like 'from ./Login' or 'import Login'
+    base_name = os.path.splitext(target_name)[0]
+    
+    impacted_files = []
+
+    # 1. SCAN THE PROJECT
+    for root, dirs, files in os.walk(project_root):
+        # Skip hidden and heavy folders
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'venv', 'dist', 'bin']]
+        
+        for file in files:
+            if file == target_name: continue # Skip the target itself
+            
+            file_full_path = os.path.join(root, file)
+            try:
+                with open(file_full_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    # Check for import patterns (e.g., import ... from './Login')
+                    # This regex is language-agnostic enough for JS, TS, Python, etc.
+                    if re.search(rf"(['\"/]){base_name}(['\"])", content):
+                        impacted_files.append(os.path.relpath(file_full_path, project_root))
+            except:
+                continue
+
+    if not impacted_files:
+        return f"✅ **Low Impact:** No external dependencies found for `{target_name}`. It is safe to refactor."
+
+    # 2. GENERATE THE BLAST RADIUS REPORT
+    report = f"## ⚠️ Blast Radius Analysis for `{target_name}`\n"
+    report += f"**Detected {len(impacted_files)} dependent files.** A change here may break the following:\n\n"
+    
+    for f in impacted_files:
+        report += f"- 📁 `{f}`\n"
+    
+    report += "\n### 🚀 Architect's Recommendation\n"
+    report += "Before applying changes, use `@codedoc` to verify the entry points in the files listed above."
+    
+    return report
 
 def main():
     mcp.run(transport='stdio')
