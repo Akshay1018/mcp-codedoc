@@ -231,14 +231,14 @@ async def predict_impact(file_path: str) -> str:
     if not impacted_files:
         return f"✅ **Low Impact:** No external dependencies found for `{target_name}`. It is safe to refactor."
 
-    # 2. GENERATE THE BLAST RADIUS REPORT
-    report = f"## ⚠️ Blast Radius Analysis for `{target_name}`\n"
+    # 2. GENERATE THE ANALYSIS REPORT
+    report = f"## Analysis for `{target_name}`\n"
     report += f"**Detected {len(impacted_files)} dependent files.** A change here may break the following:\n\n"
     
     for f in impacted_files:
         report += f"- 📁 `{f}`\n"
     
-    report += "\n### 🚀 Architect's Recommendation\n"
+    report += "\n### Architect's Recommendation\n"
     report += "Before applying changes, use `@codedoc` to verify the entry points in the files listed above."
     
     return report
