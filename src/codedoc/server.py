@@ -195,53 +195,56 @@ async def evaluate_and_refactor(file_path: str, custom_rules: str = "") -> str:
 
 # impact analysis
 @mcp.tool()
-async def predict_impact(file_path: str) -> str:
+async def predict_impact(file_path: str, symbol: str = None) -> str:
     """
-    Scans the entire project to find files that depend on the given file.
-    Identifies 'Impacted Files' and potential breaking changes.
+    Analyzes the impact of changing a specific symbol (variable, function, or class).
+    If no symbol is provided, it analyzes dependencies on the file itself.
     """
     import os
-    import re
+    # import re
 
     project_root = os.path.abspath(os.getcwd())
     target_name = os.path.basename(file_path)
-    # Remove extension to find imports like 'from ./Login' or 'import Login'
-    base_name = os.path.splitext(target_name)[0]
     
-    impacted_files = []
+    # If the user says "rename fetchData", symbol will be "fetchData"
+    # If no symbol, we default to the file name (base_name)
+    search_query = symbol if symbol else os.path.splitext(target_name)[0]
+    
+    impacted_locations = []
+    ALLOWED_EXTS = {'.ts', '.tsx', '.js', '.py', '.java', '.cs', '.cpp', '.h'}
 
-    # 1. SCAN THE PROJECT
     for root, dirs, files in os.walk(project_root):
-        # Skip hidden and heavy folders
-        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'venv', 'dist', 'bin']]
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'dist', 'bin']]
         
         for file in files:
-            if file == target_name: continue # Skip the target itself
+            if os.path.splitext(file)[1].lower() not in ALLOWED_EXTS:
+                continue
             
-            file_full_path = os.path.join(root, file)
+            full_path = os.path.join(root, file)
             try:
-                with open(file_full_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    # Check for import patterns (e.g., import ... from './Login')
-                    # This regex is language-agnostic enough for JS, TS, Python, etc.
-                    if re.search(rf"(['\"/]){base_name}(['\"])", content):
-                        impacted_files.append(os.path.relpath(file_full_path, project_root))
+                with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    # Search line-by-line to give the user exact line numbers
+                    for i, line in enumerate(f, 1):
+                        if search_query in line:
+                            rel_path = os.path.relpath(full_path, project_root)
+                            impacted_locations.append(f"{rel_path} (Line {i})")
             except:
                 continue
 
-    if not impacted_files:
-        return f"✅ **Low Impact:** No external dependencies found for `{target_name}`. It is safe to refactor."
+    if not impacted_locations:
+        return f"✅ No external references to `{search_query}` found. Change appears safe."
 
-    # 2. GENERATE THE ANALYSIS REPORT
-    report = f"## Analysis for `{target_name}`\n"
-    report += f"**Detected {len(impacted_files)} dependent files.** A change here may break the following:\n\n"
+    # deduplicate and format
+    unique_files = list(set([loc.split(' (')[0] for loc in impacted_locations]))
     
-    for f in impacted_files:
-        report += f"- 📁 `{f}`\n"
+    report = f"## 💥 Impact Analysis for `{search_query}`\n"
+    report += f"Found **{len(impacted_locations)}** references in **{len(unique_files)}** files.\n\n"
+    report += "**Affected Files:**\n" + "\n".join([f"- {f}" for f in unique_files[:5]])
     
-    report += "\n### Architect's Recommendation\n"
-    report += "Before applying changes, use `@codedoc` to verify the entry points in the files listed above."
-    
+    if len(unique_files) > 5:
+        report += f"\n...and {len(unique_files)-5} more files."
+        
+    report += "\n\n**Architect Note:** Changing this symbol will break these references. Ensure you use a 'Global Rename' or update these call-sites."
     return report
 
 def main():
