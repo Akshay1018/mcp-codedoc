@@ -184,8 +184,8 @@ async def evaluate_and_refactor(file_path: str, custom_rules: str = "") -> str:
         ---
 
         OUTPUT FORMAT REQUIREMENT:
-        1. Start with the "## 🩺 Code Health Report" section (Score, Findings, Risk).
-        2. Then provide the "## 🛠️ Optimized Code" section.
+        1. Start with the "## Code Health Report" section (Score, Findings, Risk).
+        2. Then provide the "##  Optimized Code" section.
         3. Provide the refactored code in a standard markdown block. 
            (Note: Cursor will automatically detect this and show the 'Apply' button).
         4. End with a "## 🏁 Final Verdict" explaining why this version is production-ready.
@@ -232,12 +232,12 @@ async def predict_impact(file_path: str, symbol: str = None) -> str:
                 continue
 
     if not impacted_locations:
-        return f"✅ No external references to `{search_query}` found. Change appears safe."
+        return f" No external references to `{search_query}` found. Change appears safe."
 
     # deduplicate and format
     unique_files = list(set([loc.split(' (')[0] for loc in impacted_locations]))
     
-    report = f"## 💥 Impact Analysis for `{search_query}`\n"
+    report = f"## Impact Analysis for `{search_query}`\n"
     report += f"Found **{len(impacted_locations)}** references in **{len(unique_files)}** files.\n\n"
     report += "**Affected Files:**\n" + "\n".join([f"- {f}" for f in unique_files[:5]])
     
@@ -245,6 +245,63 @@ async def predict_impact(file_path: str, symbol: str = None) -> str:
         report += f"\n...and {len(unique_files)-5} more files."
         
     report += "\n\n**Architect Note:** Changing this symbol will break these references. Ensure you use a 'Global Rename' or update these call-sites."
+    return report
+
+# security scan
+@mcp.tool()
+async def global_security_audit() -> str:
+    """
+    Scans the ENTIRE project for secrets, keys, and vulnerabilities.
+    Use this before pushing code to GitHub/GitLab.
+    """
+    import os
+    import re
+
+    project_root = os.path.abspath(os.getcwd())
+    
+    # Define what we are looking for
+    RULES = {
+        "Cloud API Key": r"(AIzaSy[0-9A-Za-z-_]{33}|AKIA[0-9A-Z]{16})",
+        "Sensitive Variable": r"(?i)(password|secret|token|apikey|api_key|private_key)\s*[:=]\s*['\"].{8,}?['\"]",
+        "Connection String": r"(mongodb|postgres|mysql):\/\/[^\s'\"@]+:[^\s'\"@]+@[^\s'\"]+",
+        "Private Key": r"-----BEGIN [A-Z ]+ PRIVATE KEY-----"
+    }
+
+    critical_findings = []
+    
+    # Walk through every file in the project
+    for root, dirs, files in os.walk(project_root):
+        # SKIP heavy/irrelevant folders
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'venv', 'dist', 'build']]
+        
+        for file in files:
+            # Only scan code files
+            if not file.endswith(('.ts', '.tsx', '.js', '.py', '.java', '.cs', '.cpp', '.h', '.env', '.yaml', '.yml')):
+                continue
+                
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    for line_num, line in enumerate(f, 1):
+                        for name, pattern in RULES.items():
+                            if re.search(pattern, line):
+                                rel_path = os.path.relpath(file_path, project_root)
+                                critical_findings.append(f"📁 `{rel_path}` | Line {line_num}: **{name}**")
+            except:
+                continue
+
+    if not critical_findings:
+        return "✅ **Project Scan Complete:** No secrets found. You are safe to push!"
+
+    # 3. FORMAT THE REPORT
+    report = "## 🚨 Global Security Audit Results\n"
+    report += f"Found **{len(critical_findings)}** potential security leaks:\n\n"
+    report += "\n".join(critical_findings[:15]) # Cap at 15 to prevent text overflow
+    
+    if len(critical_findings) > 15:
+        report += f"\n\n...and {len(critical_findings) - 15} more leaks."
+        
+    report += "\n\n**Action Required:** Neutralize these secrets or move them to a `.gitignore`'d environment file."
     return report
 
 def main():
