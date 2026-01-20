@@ -1,6 +1,6 @@
 # 🛡️ CodeDoc MCP Server
 
-**CodeDoc** is an AI-powered "Project Guardian" built for Cursor and Claude. Unlike general AI coding assistants, CodeDoc is a context-aware engine designed to enforce structural integrity, SOLID principles, and clean code standards directly within your local environment.
+**CodeDoc** is an AI-powered "Project Guardian" built for Cursor and Claude. CodeDoc is a high-performance architectural sentinel that transforms Cursor into a Project Architect by enforcing security, structural integrity, and production-grade code quality across your entire codebase. Unlike general AI coding assistants, CodeDoc is a context-aware engine designed to enforce structural integrity, SOLID principles, and clean code standards directly within your local environment. CodeDoc goes beyond simple code generation. It acts as a "Guardian" for your project, ensuring that every refactor is secure, every change is understood across the "Radius," and every line of code meets industry-standard health metrics.
 
 * * *
 
@@ -34,25 +34,44 @@ CodeDoc is the only tool that bridges the gap between **Code Execution** and **C
 | **Output** | Raw text in chat window | Professional, version-controlled Markdown |
 | **System Awareness**| No local file access | Reads & Writes directly to your workspace |
 
-### 🛠️ The "Pre-Commit" Philosophy
-CodeDoc isn't just a documentation generator; it's a **quality gatekeeper**. By generating a local audit before you merge code, you ensure that security risks, concurrency bugs, and architectural flaws are caught and documented for the whole team to see—not just hidden in your AI history.
+---
+
+## 🚀 The Guardian Pipeline
+CodeDoc doesn't just write code; it follows a professional safety-first workflow:
+1. **Security Scan:** Detects hardcoded secrets or API keys before they leak to GitHub.
+2. **Impact Analysis:** Maps the ripple effect of your changes across the entire project.
+3. **Health Audit:** Scores your code (1-10) based on SOLID, OOPS, and maintainability.
+4. **Certified Refactor:** Generates production-ready optimizations with a native side-by-side Diff view.
+
+---
 
 ## 🚀 Features
 
-### Phase 1: Smart Documentation (Complete)
+### Smart Documentation
 - **Automatic Docs:** Generates technical documentation for any file.
 - **Structure Scanning:** Maps out project files and dependencies.
 
-### Phase 2: Guardian Refactoring (Complete)
+### Guardian Refactoring
 - **Refactor & Optimize:** Targeted refactoring using SOLID and OOPS principles.
 - **Smart Pathing:** Finds `Middleware.java` even if it's buried in `src/main/resources/internal/`.
 - **Custom Rule Injection:** Allows users to pass specific team standards (e.g., "Use Tailwind for styles").
 
-### Phase 3: Architecture Scorecard (Coming Soon)
-- **Health Reports:** Get a 1-10 score on code complexity and technical debt.
-- **Impact Analysis:** See what components will break before you apply a change.
+### Security Sentinel (Project-Wide)
+Stop leaks before they happen. CodeDoc scans uncommitted files or specific folders for API keys, tokens, and vulnerabilities. 
+> **Prompt:** *"codedoc, scan my uncommitted changes for secrets before I push."*
 
-### 🗺️ Future Roadmap
+### Impact Analyzer (The Blast Radius)
+Understand the ripple effect of your changes. It identifies exactly which files and line numbers will break when you modify a function signature or rename a variable.
+> **Prompt:** *"What happens if I change the 'fetchData' argument to an object in apiService.ts?"*
+
+### Architecture Scorecard
+Get an instant audit of your code health. CodeDoc provides a 1-10 score, breaks down complexity, and identifies architectural debt.
+> **Prompt:** *"Give me a health score for login.tsx and provide the optimised code based on the health."*
+
+### Smart Project Awareness
+Language-agnostic support for **Java, TypeScript, Python, C++, C#, and more.** CodeDoc intelligently prunes `node_modules` and heavy folders to provide lightning-fast results without freezing your system.
+
+### Future Roadmap
 - 🚀 **Smart Refactoring:** Automated suggestions to simplify complex logic.
 - ⚡ **Performance Optimization:** Identifying and fixing $O(n^2)$ bottlenecks. User can ask for the code optimisation and bugfree code before final push to production.[in progress].
 - 🔒 **Secret Detection:** Scanning for leaked API keys or hardcoded credentials.
