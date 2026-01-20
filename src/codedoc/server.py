@@ -304,6 +304,75 @@ async def global_security_audit() -> str:
     report += "\n\n**Action Required:** Neutralize these secrets or move them to a `.gitignore`'d environment file."
     return report
 
+# Scan Uncommitted Files for Security Risks and Vulnerabilities
+@mcp.tool()
+async def guardian_scan(target_path: str = None, scan_uncommitted: bool = False) -> str:
+    """
+    Versatile security scanner.
+    - If scan_uncommitted is True: Scans only changed files in Git.
+    - If target_path is provided: Scans that specific file or folder.
+    - Default: Scans current working directory.
+    """
+    import os
+    import re
+    import subprocess
+
+    project_root = os.path.abspath(os.getcwd())
+    files_to_scan = []
+
+    # 1. STRATEGY: Find the files to scan
+    if scan_uncommitted:
+        try:
+            # Get list of modified and untracked files from Git
+            cmd = "git ls-files --others --modified --exclude-standard"
+            output = subprocess.check_output(cmd, shell=True, cwd=project_root).decode()
+            files_to_scan = [os.path.join(project_root, f) for f in output.splitlines()]
+        except Exception:
+            return "Error: This project doesn't seem to be a Git repository."
+    
+    elif target_path:
+        # User specified a file or folder
+        full_path = os.path.abspath(target_path)
+        if os.path.isdir(full_path):
+            for root, dirs, files in os.walk(full_path):
+                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'venv']]
+                for f in files:
+                    files_to_scan.append(os.path.join(root, f))
+        else:
+            files_to_scan.append(full_path)
+            
+    else:
+        # Default: Fast walk of the current root
+        for root, dirs, files in os.walk(project_root):
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', 'venv']]
+            for f in files:
+                files_to_scan.append(os.path.join(root, f))
+
+    # 2. THE SCAN (Optimized)
+    RULES = {
+        "Hardcoded Secret": r"(?i)(api[_-]?key|secret|token|passwd)[\s]*[:=][\s]*['\"][a-zA-Z0-9_\-\.]{10,}['\"]",
+        "Private Key": r"-----BEGIN [A-Z ]+ PRIVATE KEY-----",
+        "Connection String": r"(mongodb|postgres|mysql):\/\/[^\s'\"@]+:[^\s'\"@]+@[^\s'\"]+",
+    }
+
+    findings = []
+    for f_path in files_to_scan:
+        if not f_path.endswith(('.ts', '.tsx', '.js', '.py', '.java', '.cs', '.cpp', '.env')):
+            continue
+        try:
+            with open(f_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line_num, line in enumerate(f, 1):
+                    for name, pattern in RULES.items():
+                        if re.search(pattern, line):
+                            rel = os.path.relpath(f_path, project_root)
+                            findings.append(f" **{name}** in `{rel}` (Line {line_num})")
+        except: continue
+
+    if not findings:
+        return "No secrets found in the requested files. Ready to go!"
+
+    return "## Guardian Scan Results\n" + "\n".join(findings)
+
 def main():
     mcp.run(transport='stdio')
 
