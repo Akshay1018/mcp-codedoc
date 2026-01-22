@@ -291,10 +291,10 @@ async def global_security_audit() -> str:
                 continue
 
     if not critical_findings:
-        return "✅ **Project Scan Complete:** No secrets found. You are safe to push!"
+        return "**Project Scan Complete:** No secrets found. You are safe to push!"
 
     # 3. FORMAT THE REPORT
-    report = "## 🚨 Global Security Audit Results\n"
+    report = "## Global Security Audit Results\n"
     report += f"Found **{len(critical_findings)}** potential security leaks:\n\n"
     report += "\n".join(critical_findings[:15]) # Cap at 15 to prevent text overflow
     
