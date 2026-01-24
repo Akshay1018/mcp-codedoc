@@ -373,6 +373,56 @@ async def guardian_scan(target_path: str = None, scan_uncommitted: bool = False)
 
     return "## Guardian Scan Results\n" + "\n".join(findings)
 
+
+@mcp.tool()
+async def inspect_contract_change() -> str:
+    """
+    Analyzes uncommitted changes to identify modified 'Contracts' 
+    (function signatures, class names, etc.) that require Sync.
+    """
+    import subprocess
+    import os
+    import re
+
+    project_root = os.path.abspath(os.getcwd())
+    
+    try:
+        diff_cmd = "git diff -U0"
+        diff_output = subprocess.check_output(diff_cmd, shell=True, cwd=project_root).decode()
+    except:
+        return " Error: Could not retrieve git diff. Ensure this is a git repo."
+
+    if not diff_output:
+        return "No uncommitted changes detected. Codebase is in harmony."
+
+    # This looks for lines starting with + (new) and - (old) that look like declarations
+    CONTRACT_PATTERN = r"(export\s+)?(function|class|const|interface)\s+([a-zA-Z0-9_]+)"
+    
+    changes = []
+    current_file = ""
+    
+    for line in diff_output.splitlines():
+        if line.startswith("--- a/"):
+            current_file = line[6:]
+        
+        # Look for the signature changes
+        match = re.search(CONTRACT_PATTERN, line)
+        if match:
+            type_of_change = "MODIFIED" if line.startswith("-") else "ADDED"
+            symbol_name = match.group(3)
+            changes.append(f"File: `{current_file}` | **{symbol_name}** ({type_of_change})")
+
+    if not changes:
+        return "Changes detected, but no public 'Contracts' (functions/classes) were modified."
+
+    report = "## Contract Change Manifest\n"
+    report += "The following public signatures have changed and may require **Ripple Synchronization**:\n\n"
+    report += "\n".join(set(changes)) # Set to remove duplicates
+    report += "\n\n**Next Step:** Would you like me to find all call-sites that need to be 'Healed' to match these changes?"
+    
+    return report
+
+
 def main():
     mcp.run(transport='stdio')
 
