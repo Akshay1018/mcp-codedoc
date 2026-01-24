@@ -422,6 +422,52 @@ async def inspect_contract_change() -> str:
     
     return report
 
+@mcp.tool()
+async def heal_dependency_calls(symbol_name: str, file_path: str, change_type: str) -> str:
+    """
+    Finds and proposes updates for all files calling a modified symbol.
+    
+    Args:
+        symbol_name: The name of the function or class that was modified.
+        file_path: The source file where the change originated.
+        change_type: e.g., 'RENAME', 'PARAM_ADDED', 'PARAM_REMOVED'.
+    """
+    import os
+    import re
+
+    project_root = os.path.abspath(os.getcwd())
+    affected_files = []
+    
+    # 1. Locate all files that reference this symbol (simple grep-like scan)
+    # Excluding the source file and node_modules/dist/etc.
+    for root, dirs, files in os.walk(project_root):
+        dirs[:] = [d for d in dirs if d not in ['.git', 'node_modules', 'dist', 'build']]
+        for file in files:
+            if file.endswith(('.ts', '.js', '.py', '.java', '.cs')):
+                full_path = os.path.join(root, file)
+                if full_path == os.path.abspath(file_path):
+                    continue
+                
+                with open(full_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    if symbol_name in content:
+                        affected_files.append(full_path)
+
+    if not affected_files:
+        return f"No external dependencies found for `{symbol_name}`. No healing required."
+
+    report = f"## Healing Plan for `{symbol_name}`\n"
+    report += f"Found **{len(affected_files)}** files requiring synchronization:\n\n"
+
+    for path in affected_files:
+        rel_path = os.path.relpath(path, project_root)
+        report += f"- `[SYNC NEEDED]` in `{rel_path}`\n"
+
+    report += f"\n**Proposed Action:** Based on the `{change_type}` in `{file_path}`, I will now generate the code patches for these files. \n\n"
+    report += "Would you like me to proceed with generating the multi-file diff?"
+
+    return report
+
 
 def main():
     mcp.run(transport='stdio')
