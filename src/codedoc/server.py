@@ -373,6 +373,102 @@ async def guardian_scan(target_path: str = None, scan_uncommitted: bool = False)
 
     return "## Guardian Scan Results\n" + "\n".join(findings)
 
+
+@mcp.tool()
+async def inspect_contract_change() -> str:
+    """
+    Analyzes uncommitted changes to identify modified 'Contracts' 
+    (function signatures, class names, etc.) that require Sync.
+    """
+    import subprocess
+    import os
+    import re
+
+    project_root = os.path.abspath(os.getcwd())
+    
+    try:
+        diff_cmd = "git diff -U0"
+        diff_output = subprocess.check_output(diff_cmd, shell=True, cwd=project_root).decode()
+    except:
+        return " Error: Could not retrieve git diff. Ensure this is a git repo."
+
+    if not diff_output:
+        return "No uncommitted changes detected. Codebase is in harmony."
+
+    # This looks for lines starting with + (new) and - (old) that look like declarations
+    CONTRACT_PATTERN = r"(export\s+)?(function|class|const|interface)\s+([a-zA-Z0-9_]+)"
+    
+    changes = []
+    current_file = ""
+    
+    for line in diff_output.splitlines():
+        if line.startswith("--- a/"):
+            current_file = line[6:]
+        
+        # Look for the signature changes
+        match = re.search(CONTRACT_PATTERN, line)
+        if match:
+            type_of_change = "MODIFIED" if line.startswith("-") else "ADDED"
+            symbol_name = match.group(3)
+            changes.append(f"File: `{current_file}` | **{symbol_name}** ({type_of_change})")
+
+    if not changes:
+        return "Changes detected, but no public 'Contracts' (functions/classes) were modified."
+
+    report = "## Contract Change Manifest\n"
+    report += "The following public signatures have changed and may require **Ripple Synchronization**:\n\n"
+    report += "\n".join(set(changes)) # Set to remove duplicates
+    report += "\n\n**Next Step:** Would you like me to find all call-sites that need to be 'Healed' to match these changes?"
+    
+    return report
+
+@mcp.tool()
+async def heal_dependency_calls(symbol_name: str, file_path: str, change_type: str) -> str:
+    """
+    Finds and proposes updates for all files calling a modified symbol.
+    
+    Args:
+        symbol_name: The name of the function or class that was modified.
+        file_path: The source file where the change originated.
+        change_type: e.g., 'RENAME', 'PARAM_ADDED', 'PARAM_REMOVED'.
+    """
+    import os
+    import re
+
+    project_root = os.path.abspath(os.getcwd())
+    affected_files = []
+    
+    # 1. Locate all files that reference this symbol (simple grep-like scan)
+    # Excluding the source file and node_modules/dist/etc.
+    for root, dirs, files in os.walk(project_root):
+        dirs[:] = [d for d in dirs if d not in ['.git', 'node_modules', 'dist', 'build']]
+        for file in files:
+            if file.endswith(('.ts', '.js', '.py', '.java', '.cs')):
+                full_path = os.path.join(root, file)
+                if full_path == os.path.abspath(file_path):
+                    continue
+                
+                with open(full_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    if symbol_name in content:
+                        affected_files.append(full_path)
+
+    if not affected_files:
+        return f"No external dependencies found for `{symbol_name}`. No healing required."
+
+    report = f"## Healing Plan for `{symbol_name}`\n"
+    report += f"Found **{len(affected_files)}** files requiring synchronization:\n\n"
+
+    for path in affected_files:
+        rel_path = os.path.relpath(path, project_root)
+        report += f"- `[SYNC NEEDED]` in `{rel_path}`\n"
+
+    report += f"\n**Proposed Action:** Based on the `{change_type}` in `{file_path}`, I will now generate the code patches for these files. \n\n"
+    report += "Would you like me to proceed with generating the multi-file diff?"
+
+    return report
+
+
 def main():
     mcp.run(transport='stdio')
 
