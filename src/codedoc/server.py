@@ -468,6 +468,79 @@ async def heal_dependency_calls(symbol_name: str, file_path: str, change_type: s
 
     return report
 
+# Sync Patch Generation
+def generate_sync_patch(original_line: str, symbol: str, change_type: str, metadata: dict) -> str:
+    """
+    The 'Healing Brain': Takes a broken line of code and returns the fixed version.
+    """
+    # 1. Handle Renames
+    if change_type == "RENAME":
+        new_name = metadata.get("new_name")
+        return original_line.replace(symbol, new_name)
+
+    # 2. Handle Added Parameters (The most common issue)
+    if change_type == "PARAM_ADDED":
+        # Regex to find the function call and its closing parenthesis
+        pattern = rf"({symbol}\s*\()(.*?)(\))"
+        # We add a placeholder 'null' or a descriptive TODO for the new param
+        return re.sub(pattern, r"\1\2, /* TODO: CodeDoc Sync */ null\3", original_line)
+
+    # 3. Handle Object Wrapping (Modernizing APIs)
+    if change_type == "WRAP_IN_OBJECT":
+        pattern = rf"({symbol}\s*\()(.*?)(\))"
+        return re.sub(pattern, r"\1{ data: \2 }\3", original_line)
+
+    return original_line
+
+# Sync Patch Application
+@mcp.tool()
+async def apply_sync(symbol_name: str, change_type: str, metadata: dict) -> str:
+    """
+    Generates and applies code patches to heal broken call-sites across the project.
+    
+    Args:
+        symbol_name: The function/class name that was changed.
+        change_type: 'RENAME', 'PARAM_ADDED', or 'STRUCT_CHANGE'.
+        metadata: Dictionary containing 'new_name' or 'new_params'.
+    """
+    import os
+    import re
+
+    project_root = os.path.abspath(os.getcwd())
+    results = []
+
+    # 1. Reuse the logic from Feature 2 to find affected files
+    affected_files = find_affected_files(symbol_name) # Internal helper
+
+    for file_path in affected_files:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        new_content = []
+        file_changed = False
+
+        for line in lines:
+            if symbol_name in line:
+                # Apply the Transformation Rules
+                healed_line = generate_sync_patch(line, symbol_name, change_type, metadata)
+                if healed_line != line:
+                    new_content.append(healed_line)
+                    file_changed = True
+                    continue
+            new_content.append(line)
+
+        if file_changed:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.writelines(new_content)
+            results.append(os.path.relpath(file_path, project_root))
+
+    if not results:
+        return "⚠️ No lines were modified. Check if the symbol name matches exactly."
+
+    return f"## ✅ Ripple Sync Complete\nSuccessfully healed **{len(results)}** files:\n" + \
+           "\n".join([f"- `{f}`" for f in results]) + \
+           "\n\n**Next Step:** Run Feature 4 (Harmony Validator) to ensure code quality."
+
 
 def main():
     mcp.run(transport='stdio')
